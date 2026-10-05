@@ -1039,15 +1039,20 @@ let dialRefs = [];
 function buildDial(){
   const R = 148, C = 200, circ = 2*Math.PI*R, gap = 0.0012;
   SESSIONS.forEach(s => {
-    const c = document.createElementNS(NS,"circle");
-    const startF = s.start/1440 + gap, lenF = (s.end-s.start)/1440 - gap*2;
-    c.setAttribute("cx",C); c.setAttribute("cy",C); c.setAttribute("r",R);
-    c.setAttribute("fill","none"); c.setAttribute("stroke",s.color);
-    c.setAttribute("stroke-dasharray",`${lenF*circ} ${circ-lenF*circ}`);
-    c.setAttribute("stroke-dashoffset", String(-startF*circ));
-    c.style.transition = "stroke-width .4s ease, stroke-opacity .4s ease";
-    DIAL.arcs.appendChild(c);
-    dialRefs.push({ s, el:c });
+    const addArc = (startF, lenF) => {
+      if(lenF <= 0) return;
+      const c = document.createElementNS(NS,"circle");
+      c.setAttribute("cx",C); c.setAttribute("cy",C); c.setAttribute("r",R);
+      c.setAttribute("fill","none"); c.setAttribute("stroke",s.color);
+      c.setAttribute("stroke-dasharray",`${lenF*circ} ${circ-lenF*circ}`);
+      c.setAttribute("stroke-dashoffset", String(-startF*circ));
+      c.style.transition = "stroke-width .4s ease, stroke-opacity .4s ease";
+      DIAL.arcs.appendChild(c);
+      dialRefs.push({ s, el:c });
+    };
+    const sF = (s.start % 1440)/1440 + gap, lF = (s.end-s.start)/1440 - gap*2;
+    if(sF + lF > 1){ addArc(sF, 1 - sF); addArc(0, sF + lF - 1); } /* crosses midnight */
+    else addArc(sF, lF);
   });
 }
 let ticksBuilt = false;
@@ -1202,7 +1207,8 @@ let lastNextId = "__init2";
 function tick(force){
   if(force !== true && document.body.classList.contains("tm-open")) return;
   const now = new Date();
-  const m = minutesOf(now);
+  let m = minutesOf(now);
+  if(DAY_END > 1440 && m < DAY_START && m <= DAY_END - 1440) m += 1440; /* after midnight, still in tonight's schedule */
   const dp = dayProgress(m);
   const active = activeSession(m);
   const next = nextSession(m);
@@ -1302,7 +1308,7 @@ function tick(force){
   if(nc){
     nc.textContent = next
       ? fmtRemain(next.start - m)
-      : fmtRemain(m >= DAY_START ? 1440 - m + DAY_START : DAY_START - m);
+      : fmtRemain(m >= DAY_START ? 1440 - (m % 1440) + DAY_START : DAY_START - m);
   }
 
   /* strip */
@@ -1530,7 +1536,7 @@ function loadSaved(){
   try{
     const arr = JSON.parse(raw);
     if(!Array.isArray(arr) || !arr.length) return null;
-    const ok = arr.every(r => r && typeof r.title === "string" && Number.isFinite(r.start) && Number.isFinite(r.end) && r.end > r.start && r.start >= 0 && r.end <= 1440);
+    const ok = arr.every(r => r && typeof r.title === "string" && Number.isFinite(r.start) && Number.isFinite(r.end) && r.end > r.start && r.start >= 0 && r.end <= 2880 && r.end - r.start <= 1440);
     return ok ? arr : null;
   }catch(e){ return null; }
 }
@@ -1670,12 +1676,12 @@ function validate(){
     if(!title) return { error:`Block ${n}: please give it a name.` };
     let st = r.start, en = r.end;
     if(!Number.isFinite(st) || !Number.isFinite(en)) return { error:`Block ${n}: set both a start and an end time.` };
-    if(en === 0 && st > 0) en = 1440;
-    if(en <= st) return { error:`Block ${n} (${title}): end time must be after the start time, on the same day.` };
+    if(en <= st) en += 1440; /* ends after midnight, e.g. 11 PM → 1 AM */
     out.push({ title, start:st, end:en, kind:r.kind === "support" ? "support" : "core", color:r.color || PALETTE[i % PALETTE.length], ic:ICONS[r.ic] ? r.ic : "target", desc:(r.desc || "").trim() });
   }
   if(!out.length) return { error:"Add at least one block." };
   out.sort((a,b) => a.start - b.start);
+  if(out[out.length-1].end - out[0].start > 1440) return { error:"Your schedule spans more than 24 hours. Shorten a block or remove one." };
   for(let i = 1; i < out.length; i++){
     if(out[i].start < out[i-1].end) return { error:`"${out[i-1].title}" and "${out[i].title}" overlap. Adjust their times.` };
   }
