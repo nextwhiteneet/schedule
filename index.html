@@ -406,6 +406,9 @@ body.tm-open main,body.tm-open .site-header,body.tm-open .bg-orbs,body.tm-open .
 .tm-title-in{flex:1 1 150px;min-width:0}
 .tm-f{display:flex;flex-direction:column;gap:.3rem;flex:0 0 104px}
 .tm-f.wide{flex:0 0 118px}
+.tm-f.tm-time{flex:0 0 200px}
+.tp{display:flex;gap:.3rem}
+.tp select{padding:0 .3rem;text-align:center;min-width:0}
 .tm-f em{font-style:normal;font-family:var(--fm);font-size:8.5px;letter-spacing:.24em;color:var(--dim)}
 .tm-desc{flex:1 1 100%}
 .tm-del{display:grid;place-items:center;width:40px;height:40px;flex:none;border-radius:.65rem;border:1px solid var(--b10);color:var(--dim);cursor:pointer;transition:color .3s,border-color .3s}
@@ -560,7 +563,7 @@ body{overflow-x:clip}
   .tm-sub{font-size:.8rem;margin-top:.5rem}
   .tm-body{padding:0 1.1rem .75rem}
   .tm-row{padding:.75rem;gap:.5rem}
-  .tm-f,.tm-f.wide{flex:1 1 calc(50% - .25rem)}
+  .tm-f,.tm-f.wide,.tm-f.tm-time{flex:1 1 calc(50% - .25rem)}
   .tm-in,.tm-row select,.tm-row input[type=time]{font-size:16px}
   .tm-foot{padding:.8rem 1.1rem calc(.9rem + env(safe-area-inset-bottom));gap:.5rem}
   .tm-foot .grp{width:100%}
@@ -596,7 +599,7 @@ body{overflow-x:clip}
   .stat-label{letter-spacing:.16em}
 }
 @media(max-width:350px){
-  .tm-f,.tm-f.wide{flex:1 1 100%}
+  .tm-f,.tm-f.wide,.tm-f.tm-time{flex:1 1 100%}
   .nav-clock-box{margin-right:80px}
   .brand-name{font-size:12.5px}
   .hero-line{font-size:clamp(3rem,18vw,4rem)}
@@ -639,7 +642,7 @@ body{overflow-x:clip}
   <div class="loader-foot">
     <span>SYS.CHECK — OK</span>
     <span class="blink" id="ldHours">CALIBRATING 17.5H</span>
-    <span id="ldRange">05:00 → 22:30 IST</span>
+    <span id="ldRange">05:00 AM → 10:30 PM IST</span>
   </div>
 </div>
 
@@ -669,7 +672,7 @@ body{overflow-x:clip}
     </nav>
     <div class="nav-clock-box">
       <span class="nav-date" id="navDate">—</span>
-      <span class="nav-clock" id="navClock">00:00:00</span>
+      <span class="nav-clock" id="navClock">12:00:00 AM</span>
       <span class="nav-daypct"><span class="pulse-dot"></span>DAY <span id="navPct" class="tabular">0%</span></span>
     </div>
   </div>
@@ -679,7 +682,7 @@ body{overflow-x:clip}
 <div class="rail-left" aria-hidden="true"><span class="rail-label" id="railLabel">00 / IGNITION</span></div>
 <div class="rail-right" aria-hidden="true">
   <div class="scroll-track"><div class="scroll-fill" id="scrollFill"></div></div>
-  <p class="rail-vert" id="railRange">05:00 → 22:30</p>
+  <p class="rail-vert" id="railRange">05:00 AM → 10:30 PM</p>
 </div>
 
 <main>
@@ -689,7 +692,7 @@ body{overflow-x:clip}
     <div class="wrap hero-inner">
       <div class="hero-kicker">
         <span class="pulse-dot"></span>
-        <span id="kickText">SYS.BOOT // 05:00 IST — ALL SYSTEMS OPERATIONAL</span>
+        <span id="kickText">SYS.BOOT // 05:00 AM IST — ALL SYSTEMS OPERATIONAL</span>
       </div>
       <h1 class="hero-title">
         <span class="hero-line"><span class="mask" data-split>NEXT</span></span>
@@ -719,7 +722,7 @@ body{overflow-x:clip}
           <div class="hp-fill" id="dayFill" style="width:0.5%"></div>
           <div class="hp-knob" id="dayKnob" style="left:0%"></div>
         </div>
-        <div class="hp-bottom"><span id="hpStart">05:00 — IGNITION</span><span id="hpEnd">22:30 — SHUTDOWN</span></div>
+        <div class="hp-bottom"><span id="hpStart">05:00 AM — IGNITION</span><span id="hpEnd">10:30 PM — SHUTDOWN</span></div>
       </div>
     </div>
   </section>
@@ -758,7 +761,7 @@ body{overflow-x:clip}
               <span class="dc-time" id="dcTime"></span>
             </div>
           </div>
-          <div class="dial-foot"><span>00:00 ↑ MIDNIGHT</span><span>NEEDLE = NOW</span></div>
+          <div class="dial-foot"><span>12:00 AM ↑ MIDNIGHT</span><span>NEEDLE = NOW</span></div>
         </div>
 
         <!-- right stack -->
@@ -780,7 +783,7 @@ body{overflow-x:clip}
           <div class="card strip-card" data-reveal>
             <div class="card-head"><span id="stripTitle">17.5H PROTOCOL STRIP</span><span class="tabular" style="color:var(--bone)" id="stripPct">0% ELAPSED</span></div>
             <div class="strip-segs" id="stripSegs"></div>
-            <div class="strip-foot"><span id="stripA">05:00</span><span>HOVER SEGMENTS FOR DETAIL</span><span id="stripB">22:30</span></div>
+            <div class="strip-foot"><span id="stripA">05:00 AM</span><span>HOVER SEGMENTS FOR DETAIL</span><span id="stripB">10:30 PM</span></div>
           </div>
         </div>
       </div>
@@ -800,7 +803,7 @@ body{overflow-x:clip}
       <div class="legend" data-reveal>
         <span class="chip"><span class="cdot" style="background:var(--emerald)"></span><span id="lgCore">7 CORE MODULES</span></span>
         <span class="chip"><span class="cdot" style="background:#67e8f9"></span><span id="lgBuf">3 RECOVERY BUFFERS</span></span>
-        <span class="chip"><span class="cdot" style="background:#a78bfa"></span><span id="lgRange">GAPLESS 05:00 → 22:30</span></span>
+        <span class="chip"><span class="cdot" style="background:#a78bfa"></span><span id="lgRange">GAPLESS 05:00 AM → 10:30 PM</span></span>
       </div>
       <div class="timeline">
         <div class="tl-spine"></div>
@@ -808,7 +811,7 @@ body{overflow-x:clip}
         <div class="tl-rows" id="tlRows"></div>
         <div class="tl-endcap" data-reveal>
           <div class="endcap-node"><i></i><b></b></div>
-          <span class="endcap-text" id="endcapText">22:30 — SHUTDOWN. SLEEP IS A STUDY TECHNIQUE.</span>
+          <span class="endcap-text" id="endcapText">10:30 PM — SHUTDOWN. SLEEP IS A STUDY TECHNIQUE.</span>
         </div>
       </div>
     </div>
@@ -833,7 +836,7 @@ body{overflow-x:clip}
         <div class="stat" data-hover style="--sc:#8b5cf6">
           <div><span class="stat-num" id="st2" data-target="10" data-decimals="0">0</span><span class="stat-suffix"></span></div>
           <p class="stat-label">BLOCKS IN THE CIRCUIT</p>
-          <p class="stat-sub" id="sub2">Gapless, 05:00 → 22:30</p>
+          <p class="stat-sub" id="sub2">Gapless, 05:00 AM → 10:30 PM</p>
         </div>
         <div class="stat" data-hover style="--sc:#ef4444">
           <div><span class="stat-num" id="st3" data-target="3" data-decimals="0">0</span><span class="stat-suffix">H</span></div>
@@ -854,10 +857,10 @@ body{overflow-x:clip}
   <footer data-rail="04 / OUTRO">
     <div class="marquee" id="marquee2" style="border-bottom:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.015)"></div>
     <div class="footer-mid">
-      <p class="footer-kicker" id="footKick" data-reveal>MISSION ENDS AT 22:30 — THEN WE SLEEP, THEN WE GO AGAIN</p>
+      <p class="footer-kicker" id="footKick" data-reveal>MISSION ENDS AT 10:30 PM — THEN WE SLEEP, THEN WE GO AGAIN</p>
       <h2 class="footer-big" data-reveal>
         <small>See you at</small>
-        <span class="big text-outline" id="footBig">05:00</span>
+        <span class="big text-outline" id="footBig">5AM</span>
       </h2>
       <p class="footer-note" id="footNote" data-reveal>Aspirants scroll. Doctors execute. Tomorrow the needle hits 5AM and the whole machine lights up again — same protocol, sharper you.</p>
     </div>
@@ -997,7 +1000,7 @@ const pad = n => String(n).padStart(2, "0");
 function to12(m){ const h24=Math.floor(m/60)%24, mm=Math.floor(m%60), ap=h24<12?"AM":"PM", h=h24%12===0?12:h24%12;
   return `${pad(h)}:${pad(mm)} ${ap}`; }
 const fmtRange = (s,e) => `${to12(s)} — ${to12(e)}`;
-const fmtClock = d => `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+const fmtClock = d => { const h24=d.getHours(), h=h24%12===0?12:h24%12; return `${pad(h)}:${pad(d.getMinutes())}:${pad(d.getSeconds())} ${h24<12?"AM":"PM"}`; };
 function fmtRemain(minF){ const t=Math.max(0,Math.ceil(minF*60)), h=Math.floor(t/3600), m=Math.floor((t%3600)/60), s=t%60;
   return h>0?`${pad(h)}:${pad(m)}:${pad(s)}`:`${pad(m)}:${pad(s)}`; }
 function fmtDur(mins){ if(mins%60===0) return `${mins/60}H`; if(mins<60) return `${mins}M`; return `${Math.floor(mins/60)}H ${mins%60}M`; }
@@ -1501,7 +1504,7 @@ const DEFAULT_SLIM = JSON.stringify(DEFAULT_SESSIONS.map(slim));
 const isSample = arr => JSON.stringify(arr.map(slim)) === DEFAULT_SLIM && arr.every(x => !x.desc);
 let isDefaultTT = true;
 
-const hm = m => `${pad(Math.floor(m/60)%24)}:${pad(m%60)}`;
+const hm = m => to12(m);
 const hrsNum = mins => { const h = mins/60; return Number.isInteger(h) ? String(h) : h.toFixed(1); };
 const hrsLabel = mins => { const h = mins/60; if(Number.isInteger(h)) return String(h); if(Math.round(h*2) === h*2) return Math.floor(h) + "½"; return h.toFixed(1); };
 function short12(m){ const h24 = Math.floor(m/60)%24, mm = m%60, h = h24%12===0?12:h24%12; return `${h}${mm?":"+pad(mm):""}${h24<12?"AM":"PM"}`; }
@@ -1561,7 +1564,7 @@ function renderTexts(first){
   setT("lgRange", `${gapless ? "GAPLESS " : ""}${range}`);
   setT("endcapText", `${hm(B)} — SHUTDOWN. SLEEP IS A STUDY TECHNIQUE.`);
   setT("footKick", `MISSION ENDS AT ${hm(B)} — THEN WE SLEEP, THEN WE GO AGAIN`);
-  setT("footBig", hm(A));
+  setT("footBig", short12(A));
   setT("footNote", `Aspirants scroll. Doctors execute. Tomorrow the needle hits ${short12(A)} and the whole machine lights up again — same protocol, sharper you.`);
   setT("footBar", `NEXT WHITE — BUILT FOR THE ${short12(A)} VERSION OF YOU`);
 
@@ -1606,6 +1609,12 @@ function applyTimetable(list, first){
 const TM = { overlay:$("tmOverlay"), rows:$("tmRows"), err:$("tmErr"), close:$("tmClose"), kicker:$("tmKicker") };
 let tmData = [], tmFirst = false;
 const toHHMM = m => `${pad(Math.floor(m/60)%24)}:${pad(m%60)}`;
+const tpHTML = (f, m) => {
+  const h24 = Math.floor(m/60)%24, mm = m%60, h12 = h24%12===0 ? 12 : h24%12, pm = h24 >= 12;
+  const hs = Array.from({length:12}, (_,i) => { const v=i+1; return `<option value="${v}"${v===h12?" selected":""}>${pad(v)}</option>`; }).join("");
+  const ms = Array.from({length:60}, (_,i) => `<option value="${i}"${i===mm?" selected":""}>${pad(i)}</option>`).join("");
+  return `<span class="tp"><select data-f="${f}" data-p="h" aria-label="${f} hour">${hs}</select><select data-f="${f}" data-p="m" aria-label="${f} minute">${ms}</select><select data-f="${f}" data-p="ap" aria-label="${f} AM or PM"><option value="AM"${pm?"":" selected"}>AM</option><option value="PM"${pm?" selected":""}>PM</option></select></span>`;
+};
 const fromHHMM = v => { const p = (v || "").split(":"); return p.length === 2 ? (+p[0]) * 60 + (+p[1]) : NaN; };
 const esc = t => String(t).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
 
@@ -1614,8 +1623,8 @@ function tmRender(){
     <div class="tm-row" data-i="${i}">
       <span class="tm-swatch"><input type="color" data-f="color" value="${r.color}" aria-label="Block colour"></span>
       <input class="tm-in tm-title-in" data-f="title" placeholder="Block name (e.g. Physics Lecture)" maxlength="40" value="${esc(r.title)}" aria-label="Block name">
-      <label class="tm-f"><em>START</em><input type="time" data-f="start" value="${toHHMM(r.start)}"></label>
-      <label class="tm-f"><em>END</em><input type="time" data-f="end" value="${toHHMM(r.end % 1440)}"></label>
+      <label class="tm-f tm-time"><em>START</em>${tpHTML("start", r.start)}</label>
+      <label class="tm-f tm-time"><em>END</em>${tpHTML("end", r.end % 1440)}</label>
       <label class="tm-f wide"><em>TYPE</em><select data-f="kind"><option value="core"${r.kind!=="support"?" selected":""}>Core study</option><option value="support"${r.kind==="support"?" selected":""}>Rest / buffer</option></select></label>
       <label class="tm-f wide"><em>ICON</em><select data-f="ic">${ICON_CHOICES.map(([k,n]) => `<option value="${k}"${r.ic===k?" selected":""}>${n}</option>`).join("")}</select></label>
       <button class="tm-del" type="button" data-del aria-label="Remove block" title="Remove block"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
@@ -1625,7 +1634,10 @@ function tmRender(){
 TM.rows.addEventListener("input", e => {
   const f = e.target.dataset.f; if(!f) return;
   const i = +e.target.closest(".tm-row").dataset.i, r = tmData[i];
-  if(f === "start" || f === "end"){ r[f] = fromHHMM(e.target.value); }
+  if(f === "start" || f === "end"){
+    const sel = e.target.closest(".tp").querySelectorAll("select");
+    r[f] = (((+sel[0].value) % 12) + (sel[2].value === "PM" ? 12 : 0)) * 60 + (+sel[1].value);
+  }
   else r[f] = e.target.value;
   TM.err.textContent = "";
 });
