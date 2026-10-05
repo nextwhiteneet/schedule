@@ -408,6 +408,26 @@ body.tm-open main,body.tm-open .site-header,body.tm-open .bg-orbs,body.tm-open .
 .tm-f.wide{flex:0 0 118px}
 .tm-f.tm-time{flex:0 0 200px}
 .tp{display:flex;gap:.3rem}
+.tm-tabs{display:flex;gap:.5rem;margin-bottom:.9rem}
+.tm-tab{flex:1;padding:.75rem .4rem;border:1px solid var(--b18);border-radius:.8rem;font-family:var(--fm);font-size:9.5px;letter-spacing:.16em;color:var(--dim);cursor:pointer}
+.tm-tab.on{color:var(--bone);border-color:rgba(52,211,153,.7);background:rgba(52,211,153,.1)}
+.tm-weekbar{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin-bottom:.9rem}
+.tm-weekbar .tm-day-h{flex:1 1 100%}
+.tm-chips{display:flex;flex-wrap:wrap;gap:.4rem}
+.tm-chip{padding:.5rem .7rem;border:1px solid var(--b18);border-radius:999px;font-family:var(--fm);font-size:10px;letter-spacing:.14em;color:var(--dim);cursor:pointer}
+.tm-chip.on{color:#07070d;background:var(--emerald);border-color:var(--emerald)}
+.tm-qf{margin-bottom:.9rem;border:1px dashed var(--b18);border-radius:1rem;padding:.8rem .9rem}
+.tm-qf summary{cursor:pointer;font-family:var(--fm);font-size:10px;letter-spacing:.18em;color:var(--emerald)}
+.tm-qf textarea{width:100%;margin-top:.7rem;padding:.6rem .7rem;border-radius:.65rem;border:1px solid var(--b10);background:var(--field);color:var(--bone);font-family:var(--fm);font-size:13px;outline:none;resize:vertical}
+.tm-qf-row{display:flex;flex-wrap:wrap;gap:.7rem;align-items:center;margin-top:.6rem}
+.tm-qf-hint{flex:1 1 220px;font-size:.72rem;line-height:1.5;color:var(--dim)}
+.tm-in.bad{border-color:var(--rose)}
+.tm-day{border-style:dashed;margin-bottom:1rem}
+.tm-day-h{flex:1 1 100%;font-family:var(--fm);font-size:9px;letter-spacing:.26em;color:var(--emerald)}
+.tm-mv{display:flex;flex-direction:column;gap:2px;width:40px;height:40px;flex:none}
+.tm-mv button{flex:1;display:grid;place-items:center;border:1px solid var(--b10);border-radius:.4rem;color:var(--dim);cursor:pointer;transition:color .3s,border-color .3s}
+.tm-mv button:hover:not(:disabled){color:var(--emerald);border-color:rgba(52,211,153,.6)}
+.tm-mv button:disabled{opacity:.3;cursor:default}
 .tp select{padding:0 .3rem;text-align:center;min-width:0}
 .tm-f em{font-style:normal;font-family:var(--fm);font-size:8.5px;letter-spacing:.24em;color:var(--dim)}
 .tm-desc{flex:1 1 100%}
@@ -889,7 +909,7 @@ body{overflow-x:clip}
       <div>
         <div class="sec-meta"><span class="sec-index">SETUP</span><span class="sec-rule"></span><span class="sec-kicker" id="tmKicker">TIMETABLE MAPPING</span></div>
         <h2 class="tm-title" id="tmTitle">Map your own day</h2>
-        <p class="tm-sub">Add your study blocks with start and end times. The dial, timeline, live status and stats rebuild around your schedule. You can start from the sample protocol below and edit it.</p>
+        <p class="tm-sub">Fastest way: open QUICK FILL and type your day, one block per line. Times accept forms like 6, 6:30, 630p. Use the SPECIAL DAYS tab for a different routine on chosen weekdays (e.g. only Sunday). ▲ ▼ reorder blocks — they stay where you put them.</p>
       </div>
       <div class="tm-tools">
         <button class="tm-ibtn" id="tmTheme" type="button" aria-label="Toggle light / dark mode" title="Light / dark mode">
@@ -902,6 +922,13 @@ body{overflow-x:clip}
       </div>
     </div>
     <div class="tm-body">
+      <div class="tm-tabs"><button class="tm-tab on" type="button" data-tab="reg">REGULAR DAYS</button><button class="tm-tab" type="button" data-tab="sp">SPECIAL DAYS (e.g. SUNDAY)</button></div>
+      <div class="tm-weekbar" id="tmWeek"></div>
+      <div class="tm-row tm-day" id="tmDay"></div>
+      <details class="tm-qf" id="tmQF"><summary>⚡ QUICK FILL — TYPE YOUR WHOLE DAY IN SECONDS</summary>
+        <textarea id="tmQFText" rows="6" spellcheck="false" placeholder="5-6:30 Physics&#10;6:30-7 Breakfast&#10;7-9 Chemistry&#10;90m Biology&#10;30m Break&#10;2-5 Mock test"></textarea>
+        <div class="tm-qf-row"><button class="tm-btn" id="tmQFBtn" type="button">BUILD BLOCKS</button><span class="tm-qf-hint">One block per line: <b>START-END name</b> or just a duration like <b>90m name</b> (starts when the previous one ends). No need to type AM/PM — the next matching time after the previous block is used. Icon, colour and type are picked from the name, and the day window is set for you.</span></div>
+      </details>
       <div id="tmRows"></div>
       <button class="tm-add" id="tmAdd" type="button">+ ADD BLOCK</button>
       <p class="tm-err" id="tmErr" role="alert"></p>
@@ -1008,7 +1035,7 @@ const clamp01 = v => Math.min(1, Math.max(0, v));
 const dayProgress = m => clamp01((m - DAY_START) / DAY_TOTAL);
 const statusOf = (s,m) => m >= s.end ? "done" : m >= s.start ? "active" : "upcoming";
 const activeSession = m => SESSIONS.find(s => m >= s.start && m < s.end) || null;
-const nextSession = m => SESSIONS.find(s => s.start > m) || null;
+const nextSession = m => SESSIONS.filter(s => s.start > m).sort((a,b) => a.start - b.start)[0] || null;
 
 /* ============================================================
    DOM refs
@@ -1207,6 +1234,7 @@ let lastNextId = "__init2";
 function tick(force){
   if(force !== true && document.body.classList.contains("tm-open")) return;
   const now = new Date();
+  if(window.ensureSchedule && window.ensureSchedule(now)) return;
   let m = minutesOf(now);
   if(DAY_END > 1440 && m < DAY_START && m <= DAY_END - 1440) m += 1440; /* after midnight, still in tonight's schedule */
   const dp = dayProgress(m);
@@ -1299,7 +1327,7 @@ function tick(force){
       NEXTC.body.innerHTML = `
         <div>
           <h4 class="next-title">Next ignition — ${to12(DAY_START)}</h4>
-          <p class="next-sub">${SESSIONS[0].title.toUpperCase()}</p>
+          <p class="next-sub">${SESSIONS.slice().sort((a,b) => a.start - b.start)[0].title.toUpperCase()}</p>
         </div>
         <p class="next-count" id="nextCount" style="color:var(--emerald)"></p>`;
     }
@@ -1501,7 +1529,7 @@ setTheme(curTheme());
 /* ============================================================
    CUSTOM TIMETABLE — storage, texts, rebuild
    ============================================================ */
-const TT_KEY = "nw_timetable_v1", SETUP_KEY = "nw_setup_done";
+const TT_KEY = "nw_timetable_v1", SETUP_KEY = "nw_setup_done", DAY_KEY = "nw_day_v1", SP_KEY = "nw_special_v1", SPDAY_KEY = "nw_special_day_v1", SPDAYS_KEY = "nw_special_days_v1";
 const NUMW = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty"];
 const ICON_CHOICES = [["paw","Zoology"],["leaf","Botany"],["atom","Physics"],["flask","Chemistry"],["target","Mock test"],["chart","Analysis"],["repeat","Revision"],["coffee","Rest"],["battery","Flex buffer"],["food","Meal"]];
 const PALETTE = ["#34d399","#a3e635","#8b5cf6","#22d3ee","#fb7185","#ef4444","#fbbf24","#c084fc","#facc15","#38bdf8"];
@@ -1540,6 +1568,13 @@ function loadSaved(){
     return ok ? arr : null;
   }catch(e){ return null; }
 }
+function loadDay(){
+  const raw = store.get(DAY_KEY); if(!raw) return null;
+  try{ const d = JSON.parse(raw);
+    if(d && Number.isFinite(d.s) && Number.isFinite(d.e) && d.s >= 0 && d.s < 1440 && d.e > d.s && d.e - d.s <= 1440) return d;
+  }catch(e){}
+  return null;
+}
 function sessionsFromSlim(arr){
   return isSample(arr) ? DEFAULT_SESSIONS : buildSessions(arr);
 }
@@ -1549,8 +1584,9 @@ function renderTexts(first){
   const core = SESSIONS.filter(x => x.kind === "core").reduce((a,x) => a + x.end - x.start, 0);
   const supp = SESSIONS.filter(x => x.kind !== "core").reduce((a,x) => a + x.end - x.start, 0);
   const nCore = SESSIONS.filter(x => x.kind === "core").length, nSupp = SESSIONS.length - nCore;
-  let gapless = true;
-  for(let i = 1; i < SESSIONS.length; i++) if(SESSIONS[i].start !== SESSIONS[i-1].end) gapless = false;
+  const byTime = SESSIONS.slice().sort((a,b) => a.start - b.start);
+  let gapless = byTime[0].start === A && byTime[byTime.length-1].end === B;
+  for(let i = 1; i < byTime.length; i++) if(byTime[i].start !== byTime[i-1].end) gapless = false;
   const longest = SESSIONS.reduce((a,x) => (x.end - x.start) > (a.end - a.start) ? x : a, SESSIONS[0]);
   const range = `${hm(A)} → ${hm(B)}`;
 
@@ -1591,9 +1627,43 @@ function renderTexts(first){
   $("statsNote").innerHTML = `FOCUS DENSITY <b>${dens}%</b> — ${hrsNum(core)}H GRIND / ${hrsNum(supp)}H RECOVERY / ${hrsNum(total)}H AWAKE`;
 }
 
-function applyTimetable(list, first){
+const WEEK = { reg:null, sp:null, days:[] };
+let activeKey = null;
+const mk = (list, day) => ({ list, s: day ? day.s : Math.min(...list.map(x => x.start)), e: day ? day.e : Math.max(...list.map(x => x.end)) });
+function loadSp(){
+  try{
+    const raw = store.get(SP_KEY), dr = store.get(SPDAYS_KEY); if(!raw || !dr) return null;
+    const arr = JSON.parse(raw), days = JSON.parse(dr).filter(d => Number.isInteger(d) && d >= 0 && d < 7);
+    const ok = Array.isArray(arr) && arr.length && days.length && arr.every(r => r && typeof r.title === "string" && Number.isFinite(r.start) && Number.isFinite(r.end) && r.end > r.start && r.start >= 0 && r.end <= 2880 && r.end - r.start <= 1440);
+    if(!ok) return null;
+    const d = JSON.parse(store.get(SPDAY_KEY) || "null");
+    return { arr, days, day:(d && Number.isFinite(d.s) && Number.isFinite(d.e)) ? d : null };
+  }catch(e){ return null; }
+}
+function loadWeek(){
+  const saved = loadSaved();
+  WEEK.reg = mk(saved ? sessionsFromSlim(saved) : DEFAULT_SESSIONS, loadDay());
+  const sp = loadSp();
+  if(sp){ WEEK.sp = mk(buildSessions(sp.arr), sp.day); WEEK.days = sp.days; } else { WEEK.sp = null; WEEK.days = []; }
+}
+const kindOfDay = wd => (WEEK.sp && WEEK.days.includes(wd)) ? "sp" : "reg";
+function keyForNow(now){
+  const wd = now.getDay(), m = minutesOf(now), ky = kindOfDay((wd + 6) % 7), sy = ky === "sp" ? WEEK.sp : WEEK.reg;
+  if(sy.e > 1440 && m <= sy.e - 1440) return ky; /* still in yesterday's after-midnight tail */
+  return kindOfDay(wd);
+}
+function ensureSchedule(now, first){
+  const k = keyForNow(now); if(k === activeKey) return false;
+  activeKey = k; const o = k === "sp" ? WEEK.sp : WEEK.reg;
+  applyTimetable(o.list, !!first, { s:o.s, e:o.e });
+  return true;
+}
+window.ensureSchedule = ensureSchedule;
+function applyTimetable(list, first, day){
   SESSIONS = list;
-  DAY_START = list[0].start; DAY_END = list[list.length-1].end; DAY_TOTAL = DAY_END - DAY_START;
+  DAY_START = day ? day.s : Math.min(...list.map(x => x.start));
+  DAY_END = day ? day.e : Math.max(...list.map(x => x.end));
+  DAY_TOTAL = DAY_END - DAY_START;
   isDefaultTT = (list === DEFAULT_SESSIONS);
   DIAL.arcs.innerHTML = ""; dialRefs = [];
   STRIP.segs.innerHTML = ""; stripRefs = [];
@@ -1615,12 +1685,101 @@ function applyTimetable(list, first){
 const TM = { overlay:$("tmOverlay"), rows:$("tmRows"), err:$("tmErr"), close:$("tmClose"), kicker:$("tmKicker") };
 let tmData = [], tmFirst = false;
 const toHHMM = m => `${pad(Math.floor(m/60)%24)}:${pad(m%60)}`;
-const tpHTML = (f, m) => {
-  const h24 = Math.floor(m/60)%24, mm = m%60, h12 = h24%12===0 ? 12 : h24%12, pm = h24 >= 12;
-  const hs = Array.from({length:12}, (_,i) => { const v=i+1; return `<option value="${v}"${v===h12?" selected":""}>${pad(v)}</option>`; }).join("");
-  const ms = Array.from({length:60}, (_,i) => `<option value="${i}"${i===mm?" selected":""}>${pad(i)}</option>`).join("");
-  return `<span class="tp"><select data-f="${f}" data-p="h" aria-label="${f} hour">${hs}</select><select data-f="${f}" data-p="m" aria-label="${f} minute">${ms}</select><select data-f="${f}" data-p="ap" aria-label="${f} AM or PM"><option value="AM"${pm?"":" selected"}>AM</option><option value="PM"${pm?" selected":""}>PM</option></select></span>`;
-};
+const tmState = { reg:{ data:[], s:300, e:1350 }, sp:{ data:[], s:300, e:1350, days:[], init:false } };
+let tmTab = "reg", tmDayS = 300, tmDayE = 1350;
+const clone = a => a.map(r => ({ ...r }));
+const toTm = (list, def) => list.map(x => ({ title:x.title, start:x.start % 1440, end:x.end % 1440, kind:x.kind, color:x.color, ic:x.ic, desc:def ? "" : (x.desc || ""), touched:true }));
+const COLOR_BY_IC = { atom:"#8b5cf6", flask:"#22d3ee", leaf:"#34d399", paw:"#a3e635", target:"#ef4444", chart:"#fbbf24", repeat:"#c084fc", coffee:"#38bdf8", battery:"#facc15", food:"#fb7185" };
+const GUESS = [[/phys/,"atom","core"],[/chem/,"flask","core"],[/bio|botan|plant/,"leaf","core"],[/zoo|animal/,"paw","core"],[/mock|test|exam|paper/,"target","core"],[/analy|error|review/,"chart","core"],[/revis|recap|flash|ncert/,"repeat","core"],[/lunch|dinner|breakfast|meal|food|eat/,"food","support"],[/break|rest|nap|relax|sleep|walk|tea|coffee|gym|exercise|buffer|free/,"coffee","support"]];
+function guess(title){ const t = String(title).toLowerCase(); for(const [re,ic,kind] of GUESS) if(re.test(t)) return { ic, kind }; return { ic:"target", kind:"core" }; }
+/* typed time → absolute minutes at/after ref (AM/PM optional: next matching time wins) */
+function parseT(str, ref, strict){
+  const t = String(str).toLowerCase().replace(/\s+/g,"").replace(/([ap])\.?m?\.?$/, "$1").replace(".", ":");
+  const m = /^(\d{1,2})(?::?(\d{2}))?([ap])?$/.exec(t); if(!m) return NaN;
+  const h = +m[1], mi = +(m[2] || 0); if(h > 24 || mi > 59) return NaN;
+  let base, step = 720;
+  if(m[3]){ base = (h % 12 + (m[3] === "p" ? 12 : 0)) * 60 + mi; step = 1440; }
+  else if(h > 12 || h === 0){ base = (h % 24) * 60 + mi; step = 1440; }
+  else base = (h % 12) * 60 + mi;
+  for(let k = 0; k < 6; k++){ const c = base + k * step; if(strict ? c > ref : c >= ref) return c; }
+  return NaN;
+}
+const timeIn = (f, m) => `<input class="tm-in" data-f="${f}" value="${to12(m)}" autocomplete="off" inputmode="text" placeholder="6:30 AM" aria-label="${f}">`;
+function tmDayRender(){
+  $("tmDay").innerHTML = `<span class="tm-day-h">DAY WINDOW — WHEN DOES YOUR DAY START AND END?</span>
+    <label class="tm-f"><em>DAY STARTS</em>${timeIn("dayStart", tmDayS)}</label>
+    <label class="tm-f"><em>DAY ENDS</em>${timeIn("dayEnd", tmDayE)}</label>`;
+}
+$("tmDay").addEventListener("change", e => {
+  const f = e.target.dataset.f; if(!f) return;
+  const v = f === "dayStart" ? parseT(e.target.value, 0, false) : parseT(e.target.value, tmDayS + 480, false);
+  if(!Number.isFinite(v)){ e.target.classList.add("bad"); return; }
+  e.target.classList.remove("bad");
+  if(f === "dayStart") tmDayS = v % 1440; else tmDayE = v % 1440;
+  e.target.value = to12(v % 1440); TM.err.textContent = "";
+});
+TM.rows.addEventListener("change", e => {
+  const f = e.target.dataset.f; if(!f) return;
+  const row = e.target.closest(".tm-row"), i = +row.dataset.i, r = tmData[i];
+  if(f === "start" || f === "end"){
+    const v = parseT(e.target.value, f === "start" ? (i ? tmData[i-1].end : 0) : r.start, f === "end");
+    if(!Number.isFinite(v)){ e.target.classList.add("bad"); return; }
+    e.target.classList.remove("bad"); r[f] = v % 1440; e.target.value = to12(r[f]); TM.err.textContent = "";
+  } else if(f === "title" && !r.touched){
+    const g = guess(r.title); r.ic = g.ic; r.kind = g.kind; r.color = COLOR_BY_IC[g.ic];
+    row.querySelector('[data-f="ic"]').value = g.ic; row.querySelector('[data-f="kind"]').value = g.kind; row.querySelector('[data-f="color"]').value = r.color;
+  }
+});
+/* tabs: regular / special weekdays */
+const WD = ["SUN","MON","TUE","WED","THU","FRI","SAT"], WD_ORDER = [1,2,3,4,5,6,0];
+function tmStash(){ const t = tmState[tmTab]; t.data = tmData; t.s = tmDayS; t.e = tmDayE; }
+function tmChrome(){
+  document.querySelectorAll(".tm-tab").forEach(b => b.classList.toggle("on", b.dataset.tab === tmTab));
+  const days = tmState.sp.days, W = $("tmWeek");
+  if(tmTab === "sp"){
+    W.innerHTML = `<span class="tm-day-h">THIS SCHEDULE RUNS ON — TAP THE DAYS (NONE = OFF)</span><div class="tm-chips">${WD_ORDER.map(d => `<button type="button" class="tm-chip${days.includes(d) ? " on" : ""}" data-wd="${d}">${WD[d]}</button>`).join("")}</div><button type="button" class="tm-btn" id="tmCopyReg">COPY FROM REGULAR</button>`;
+  } else {
+    const rest = WD_ORDER.filter(d => !days.includes(d));
+    W.innerHTML = `<span class="tm-day-h">REGULAR SCHEDULE RUNS ON: ${rest.length ? rest.map(d => WD[d]).join(" · ") : "NO DAYS (SPECIAL COVERS ALL)"}</span>`;
+  }
+}
+function tmShow(tab){
+  tmStash(); tmTab = tab;
+  const t = tmState[tab];
+  if(tab === "sp" && !t.init){ t.init = true; const R = tmState.reg; t.data = clone(R.data); t.s = R.s; t.e = R.e; }
+  tmData = t.data; tmDayS = t.s; tmDayE = t.e;
+  tmDayRender(); tmRender(); tmChrome(); TM.err.textContent = "";
+}
+document.querySelectorAll(".tm-tab").forEach(b => b.addEventListener("click", () => tmShow(b.dataset.tab)));
+$("tmWeek").addEventListener("click", e => {
+  const c = e.target.closest("[data-wd]");
+  if(c){ const d = +c.dataset.wd, a = tmState.sp.days, k = a.indexOf(d); if(k < 0) a.push(d); else a.splice(k, 1); tmChrome(); return; }
+  if(e.target.closest("#tmCopyReg")){
+    if(tmData.length && !confirm("Replace this schedule with a copy of the regular one?")) return;
+    const R = tmState.reg; tmData = clone(R.data); tmDayS = R.s; tmDayE = R.e; tmDayRender(); tmRender();
+  }
+});
+/* quick fill */
+const TOK = "\\d{1,2}(?:[:.]?\\d{2})?\\s*(?:[ap]\\.?m?\\.?(?=\\s|$))?";
+const QF_RANGE = new RegExp("^\\s*(" + TOK + ")\\s*(?:-|–|—|to|till)\\s*(" + TOK + ")\\s+(.+)$", "i");
+const QF_DUR = /^\s*(\d+(?:\.\d+)?)\s*(h|hrs?|hours?|m|mins?|minutes?)\b\.?\s+(.+)$/i;
+$("tmQFBtn").addEventListener("click", () => {
+  const lines = $("tmQFText").value.split("\n").map(l => l.trim()).filter(Boolean);
+  if(!lines.length) return;
+  if(tmData.some(r => (r.title || "").trim()) && !confirm("Replace the blocks below with these lines?")) return;
+  const out = [], bad = []; let cur = 0, lo = Infinity, hi = 0;
+  lines.forEach((ln, i) => {
+    let st, en, name, mm;
+    if((mm = QF_RANGE.exec(ln))){ st = parseT(mm[1], out.length ? cur : 0, false); en = parseT(mm[2], st, true); name = mm[3]; }
+    else if((mm = QF_DUR.exec(ln))){ st = out.length ? cur : tmDayS; en = st + Math.round(/^h/i.test(mm[2]) ? +mm[1] * 60 : +mm[1]); name = mm[3]; }
+    if(!name || !Number.isFinite(st) || !Number.isFinite(en) || en <= st){ bad.push(i + 1); return; }
+    const g = guess(name);
+    out.push({ title:name.slice(0, 40), start:st % 1440, end:en % 1440, kind:g.kind, color:COLOR_BY_IC[g.ic], ic:g.ic, desc:"" });
+    cur = en; lo = Math.min(lo, st); hi = Math.max(hi, en);
+  });
+  if(out.length){ tmData = out; tmDayS = lo % 1440; tmDayE = hi % 1440; tmDayRender(); tmRender(); }
+  TM.err.textContent = bad.length ? `Couldn't read line${bad.length > 1 ? "s" : ""} ${bad.join(", ")} — use "5-6:30 Physics" or "90m Physics".` : "";
+});
 const fromHHMM = v => { const p = (v || "").split(":"); return p.length === 2 ? (+p[0]) * 60 + (+p[1]) : NaN; };
 const esc = t => String(t).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
 
@@ -1629,10 +1788,11 @@ function tmRender(){
     <div class="tm-row" data-i="${i}">
       <span class="tm-swatch"><input type="color" data-f="color" value="${r.color}" aria-label="Block colour"></span>
       <input class="tm-in tm-title-in" data-f="title" placeholder="Block name (e.g. Physics Lecture)" maxlength="40" value="${esc(r.title)}" aria-label="Block name">
-      <label class="tm-f tm-time"><em>START</em>${tpHTML("start", r.start)}</label>
-      <label class="tm-f tm-time"><em>END</em>${tpHTML("end", r.end % 1440)}</label>
+      <label class="tm-f"><em>START</em>${timeIn("start", r.start)}</label>
+      <label class="tm-f"><em>END</em>${timeIn("end", r.end % 1440)}</label>
       <label class="tm-f wide"><em>TYPE</em><select data-f="kind"><option value="core"${r.kind!=="support"?" selected":""}>Core study</option><option value="support"${r.kind==="support"?" selected":""}>Rest / buffer</option></select></label>
       <label class="tm-f wide"><em>ICON</em><select data-f="ic">${ICON_CHOICES.map(([k,n]) => `<option value="${k}"${r.ic===k?" selected":""}>${n}</option>`).join("")}</select></label>
+      <span class="tm-mv"><button type="button" data-mv="-1" aria-label="Move block up" title="Move up"${i===0?" disabled":""}><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg></button><button type="button" data-mv="1" aria-label="Move block down" title="Move down"${i===tmData.length-1?" disabled":""}><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span>
       <button class="tm-del" type="button" data-del aria-label="Remove block" title="Remove block"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
       <input class="tm-in tm-desc" data-f="desc" placeholder="Short note (optional)" maxlength="140" value="${esc(r.desc || "")}" aria-label="Note">
     </div>`).join("");
@@ -1640,70 +1800,94 @@ function tmRender(){
 TM.rows.addEventListener("input", e => {
   const f = e.target.dataset.f; if(!f) return;
   const i = +e.target.closest(".tm-row").dataset.i, r = tmData[i];
-  if(f === "start" || f === "end"){
-    const sel = e.target.closest(".tp").querySelectorAll("select");
-    r[f] = (((+sel[0].value) % 12) + (sel[2].value === "PM" ? 12 : 0)) * 60 + (+sel[1].value);
-  }
-  else r[f] = e.target.value;
+  if(f === "start" || f === "end") return; /* typed times are parsed on change */
+  r[f] = e.target.value;
+  if(f === "ic" || f === "kind" || f === "color") r.touched = true;
   TM.err.textContent = "";
 });
 TM.rows.addEventListener("click", e => {
+  const mv = e.target.closest("[data-mv]");
+  if(mv){
+    const i = +mv.closest(".tm-row").dataset.i, d = +mv.dataset.mv, j = i + d;
+    if(j < 0 || j >= tmData.length) return;
+    [tmData[i], tmData[j]] = [tmData[j], tmData[i]];
+    tmRender();
+    const row = TM.rows.querySelectorAll(".tm-row")[j];
+    const nb = row.querySelector(`[data-mv="${d}"]`);
+    (nb && !nb.disabled ? nb : row.querySelector(".tm-title-in")).focus({ preventScroll:true });
+    row.scrollIntoView({ block:"nearest" });
+    return;
+  }
   const b = e.target.closest("[data-del]"); if(!b) return;
   tmData.splice(+b.closest(".tm-row").dataset.i, 1); tmRender();
 });
 $("tmAdd").addEventListener("click", () => {
   const last = tmData[tmData.length - 1];
-  const st = last ? Math.min(last.end, 1380) : 540;
-  tmData.push({ title:"", start:st, end:Math.min(st + 60, 1439), kind:"core", color:PALETTE[tmData.length % PALETTE.length], ic:"target", desc:"" });
+  const st = last ? last.end % 1440 : tmDayS;
+  tmData.push({ title:"", start:st, end:(st + 60) % 1440, kind:"core", color:PALETTE[tmData.length % PALETTE.length], ic:"target", desc:"" });
   tmRender();
   const rows = TM.rows.querySelectorAll(".tm-row"); const lastRow = rows[rows.length - 1];
   if(lastRow){ lastRow.scrollIntoView({ block:"nearest" }); lastRow.querySelector(".tm-title-in").focus(); }
 });
 $("tmBlank").addEventListener("click", () => {
-  tmData = [{ title:"", start:360, end:480, kind:"core", color:PALETTE[0], ic:"target", desc:"" }];
+  tmData = [{ title:"", start:tmDayS, end:(tmDayS + 60) % 1440, kind:"core", color:PALETTE[0], ic:"target", desc:"" }];
   tmRender(); TM.err.textContent = "";
 });
 $("tmDefault").addEventListener("click", () => {
-  store.set(SETUP_KEY, "1");
-  try{ localStorage.removeItem(TT_KEY); }catch(e){}
-  applyTimetable(DEFAULT_SESSIONS, false);
-  closeSetup();
+  tmData = toTm(DEFAULT_SESSIONS, true); tmDayS = 300; tmDayE = 1350;
+  tmDayRender(); tmRender(); TM.err.textContent = "";
 });
-function validate(){
+function validateCore(data, dayS, dayE0){
+  let dayE = dayE0;
+  if(dayE <= dayS) dayE += 1440; /* day ends after midnight */
   const out = [];
-  for(let i = 0; i < tmData.length; i++){
-    const r = tmData[i], n = i + 1, title = (r.title || "").trim();
+  for(let i = 0; i < data.length; i++){
+    const r = data[i], n = i + 1, title = (r.title || "").trim();
     if(!title) return { error:`Block ${n}: please give it a name.` };
     let st = r.start, en = r.end;
     if(!Number.isFinite(st) || !Number.isFinite(en)) return { error:`Block ${n}: set both a start and an end time.` };
-    if(en <= st) en += 1440; /* ends after midnight, e.g. 11 PM → 1 AM */
+    st = ((st % 1440) + 1440) % 1440; if(st < dayS) st += 1440;
+    en = ((en % 1440) + 1440) % 1440; while(en <= st) en += 1440;
+    if(en > dayE) return { error:`Block ${n} (${title}): ${fmtRange(st,en)} runs outside your day (${fmtRange(dayS,dayE)}). Adjust the block or the day start/end.` };
     out.push({ title, start:st, end:en, kind:r.kind === "support" ? "support" : "core", color:r.color || PALETTE[i % PALETTE.length], ic:ICONS[r.ic] ? r.ic : "target", desc:(r.desc || "").trim() });
   }
   if(!out.length) return { error:"Add at least one block." };
-  out.sort((a,b) => a.start - b.start);
-  if(out[out.length-1].end - out[0].start > 1440) return { error:"Your schedule spans more than 24 hours. Shorten a block or remove one." };
-  for(let i = 1; i < out.length; i++){
-    if(out[i].start < out[i-1].end) return { error:`"${out[i-1].title}" and "${out[i].title}" overlap. Adjust their times.` };
+  const byTime = out.slice().sort((a,b) => a.start - b.start); /* check only; your order is kept */
+  for(let i = 1; i < byTime.length; i++){
+    if(byTime[i].start < byTime[i-1].end) return { error:`"${byTime[i-1].title}" and "${byTime[i].title}" overlap. Adjust their times.` };
   }
-  return { list:out };
+  return { list:out, day:{ s:dayS, e:dayE } };
 }
+const validate = (d, st, en, pre = "") => { const r = validateCore(d, st, en); if(r.error) r.error = pre + r.error; return r; };
 $("tmSave").addEventListener("click", () => {
-  const v = validate();
-  if(v.error){ TM.err.textContent = v.error; return; }
-  store.set(SETUP_KEY, "1");
-  if(isSample(v.list)){
-    try{ localStorage.removeItem(TT_KEY); }catch(e){}
-    applyTimetable(DEFAULT_SESSIONS, false);
-  } else {
-    store.set(TT_KEY, JSON.stringify(v.list));
-    applyTimetable(buildSessions(v.list), false);
+  tmStash();
+  const R = tmState.reg, S = tmState.sp;
+  const rv = validate(R.data, R.s, R.e);
+  if(rv.error){ if(tmTab !== "reg") tmShow("reg"); TM.err.textContent = rv.error; return; }
+  const spOn = S.init && S.days.length > 0;
+  let sv = null;
+  if(spOn){
+    sv = validate(S.data, S.s, S.e, "Special schedule — ");
+    if(sv.error){ if(tmTab !== "sp") tmShow("sp"); TM.err.textContent = sv.error; return; }
   }
+  store.set(SETUP_KEY, "1");
+  const rm = k => { try{ localStorage.removeItem(k); }catch(e){} };
+  if(isSample(rv.list)){
+    rm(TT_KEY);
+    if(rv.day.s === 300 && rv.day.e === 1350) rm(DAY_KEY); else store.set(DAY_KEY, JSON.stringify(rv.day));
+  } else { store.set(TT_KEY, JSON.stringify(rv.list)); store.set(DAY_KEY, JSON.stringify(rv.day)); }
+  if(spOn){ store.set(SP_KEY, JSON.stringify(sv.list)); store.set(SPDAY_KEY, JSON.stringify(sv.day)); store.set(SPDAYS_KEY, JSON.stringify(S.days)); }
+  else { rm(SP_KEY); rm(SPDAY_KEY); rm(SPDAYS_KEY); }
+  loadWeek(); activeKey = null; ensureSchedule(new Date(), false);
   closeSetup();
   window.scrollTo({ top:0, behavior:"smooth" });
 });
 function openSetup(first){
   tmFirst = !!first;
-  tmData = SESSIONS.map(x => ({ title:x.title, start:x.start, end:x.end, kind:x.kind, color:x.color, ic:x.ic, desc:isDefaultTT ? "" : (x.desc || "") }));
+  const W = WEEK;
+  tmState.reg = { data:toTm(W.reg.list, W.reg.list === DEFAULT_SESSIONS), s:W.reg.s % 1440, e:W.reg.e % 1440 };
+  tmState.sp = W.sp ? { data:toTm(W.sp.list, false), s:W.sp.s % 1440, e:W.sp.e % 1440, days:W.days.slice(), init:true } : { data:[], s:300, e:1350, days:[], init:false };
+  tmTab = "reg"; tmData = tmState.reg.data; tmDayS = tmState.reg.s; tmDayE = tmState.reg.e; tmDayRender(); tmChrome();
   tmRender(); TM.err.textContent = "";
   TM.close.style.display = first ? "none" : "grid";
   TM.kicker.textContent = first ? "WELCOME — TIMETABLE MAPPING" : "EDIT TIMETABLE";
@@ -1737,7 +1921,7 @@ $("enterBtn").addEventListener("click", () => {
     .toUpperCase() + " • IST";
   buildMarquee($("marquee2"), MQ2, true);
   const saved = loadSaved();
-  applyTimetable(saved ? sessionsFromSlim(saved) : DEFAULT_SESSIONS, true);
+  loadWeek(); ensureSchedule(new Date(), true);
   setInterval(tick, 500);
 })();
 </script>
